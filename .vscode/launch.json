@@ -1,0 +1,25 @@
+{
+    // Use o IntelliSense para saber mais sobre os atributos possíveis.
+    // Focalizar para exibir as descrições dos atributos existentes.
+    // Para obter mais informações, acesse: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "FastAPI",
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/api/src",
+            "program": "app/main.py", 
+            "args": [
+              "run",
+              "--reload"
+            ],
+            "console": "integratedTerminal",
+            "env": {
+              "DATABASE_URL": "postgresql://user:password@localhost:5432/mydatabase",
+              "HADOOP_URL": "http://localhost:9870"
+            },
+            "justMyCode": true
+        }
+    ]
+}
