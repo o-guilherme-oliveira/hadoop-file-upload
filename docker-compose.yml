@@ -1,0 +1,36 @@
+version: '3'
+services:
+  hadoop:
+    build: ./hadoop
+    container_name: hadoop
+    ports:
+      - "9870:9870"  # Web UI
+      - "9000:9000"  # HDFS port
+    environment:
+      - CLUSTER_NAME=hadoop-cluster
+    volumes:
+      - ./hadoop/data:/hadoop/dfs/name
+
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    environment:
+      - POSTGRES_DB=mydatabase
+      - POSTGRES_USER=myuser
+      - POSTGRES_PASSWORD=mypassword
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"  # Porta padrão do PostgreSQL
+
+  fastapi:
+    build: ./fastapi
+    container_name: fastapi
+    ports:
+      - "8000:8000"
+    depends_on:
+      - hadoop
+      - postgres
+    environment:
+      - HADOOP_HOST=hadoop
+      - HADOOP_PORT=9000
