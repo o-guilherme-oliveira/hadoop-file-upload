@@ -1,17 +1,17 @@
 version: "3.8"
 
 services:
-  postgres:
+  hadoop-postgres:
     image: postgres:13
-    container_name: postgres
+    container_name: hadoop-postgres
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: mydatabase
     ports:
-      - "5432:5432"
+      - :5432
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - hadoop_postgres_data:/var/lib/postgresql/data
     networks:
       - file-upload
       
@@ -48,18 +48,18 @@ services:
       dockerfile: Dockerfile
     container_name: fastapi
     environment:
-      - DATABASE_URL=postgresql://user:password@postgres:5432/mydatabase
+      - DATABASE_URL=postgresql://user:password@hadoop-postgres:5432/mydatabase
       - HADOOP_URL=http://hadoop-namenode:9870
     ports:
-      - "8000:8000"
+      - "8001:8000"
     depends_on:
-      - postgres
+      - hadoop-postgres
       - hadoop-namenode
     networks:
       - file-upload
 
 volumes:
-  postgres_data:
+  hadoop_postgres_data:
   hadoop_namenode:
   hadoop_datanode:
 
