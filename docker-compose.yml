@@ -1,20 +1,6 @@
 version: "3.8"
 
 services:
-  postgres:
-    image: postgres:13
-    container_name: postgres
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: mydatabase
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - file-upload
-      
   hadoop-namenode:
     image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
     container_name: namenode
@@ -27,8 +13,6 @@ services:
       - CLUSTER_NAME=test
     env_file:
       - ./hadoop.env
-    networks:
-      - file-upload
 
   hadoop-datanode:
     image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
@@ -39,29 +23,7 @@ services:
       SERVICE_PRECONDITION: "namenode:9870"
     env_file:
       - ./hadoop.env
-    networks:
-      - file-upload
-
-  fastapi:
-    build:
-      context: ./api
-      dockerfile: Dockerfile
-    container_name: fastapi
-    environment:
-      - DATABASE_URL=postgresql://user:password@postgres:5432/mydatabase
-      - HADOOP_URL=http://hadoop-namenode:9870
-    ports:
-      - "8000:8000"
-    depends_on:
-      - postgres
-      - hadoop-namenode
-    networks:
-      - file-upload
 
 volumes:
-  postgres_data:
   hadoop_namenode:
   hadoop_datanode:
-
-networks:
-  file-upload:
