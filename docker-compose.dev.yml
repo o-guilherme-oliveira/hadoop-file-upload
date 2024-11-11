@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  mon:
+    container_name: ceph-mon
+    image: ceph/daemon:latest
+    environment:
+      - MON_IP=0.0.0.0
+      - CEPH_PUBLIC_NETWORK=172.20.0.0/16
+      - NETWORK_AUTO_DETECT=4
+    command: mon
+    ports:
+      - "6789:6789"
+    volumes:
+      - ./data/mon:/var/lib/ceph/mon
+      - ceph-conf:/etc/ceph  # Volume compartilhado para ceph.conf
+    networks:
+      - ceph-net
+
+  mgr:
+    container_name: ceph-mgr
+    image: ceph/daemon:latest
+    environment:
+      - NETWORK_AUTO_DETECT=4
+    command: mgr
+    depends_on:
+      - mon
+    ports:
+      - "7000:7000"
+    volumes:
+      - ./data/mgr:/var/lib/ceph/mgr
+      - ceph-conf:/etc/ceph  # Monta o ceph.conf gerado pelo mon
+    networks:
+      - ceph-net
+
+  osd:
+    container_name: ceph-osd
+    image: ceph/daemon:latest
+    environment:
+      - NETWORK_AUTO_DETECT=4
+    command: osd
+    depends_on:
+      - mon
+    privileged: true
+    volumes:
+      - ./data/osd:/var/lib/ceph/osd
+      - /dev:/dev  # Necessário para acesso ao disco
+      - ceph-conf:/etc/ceph  # Monta o ceph.conf gerado pelo mon
+    networks:
+      - ceph-net
+
+  mds:
+    container_name: ceph-mds
+    image: ceph/daemon:latest
+    environment:
+      - NETWORK_AUTO_DETECT=4
+    command: mds
+    depends_on:
+      - mon
+    volumes:
+      - ./data/mds:/var/lib/ceph/mds
+      - ceph-conf:/etc/ceph  # Monta o ceph.conf gerado pelo mon
+    networks:
+      - ceph-net
+
+  rgw:
+    container_name: ceph-rgw
+    image: ceph/daemon:latest
+    environment:
+      - NETWORK_AUTO_DETECT=4
+    command: rgw
+    depends_on:
+      - mon
+    ports:
+      - "8080:8080"  # Porta para o serviço RGW
+    volumes:
+      - ./data/rgw:/var/lib/ceph/rgw
+      - ceph-conf:/etc/ceph  # Monta o ceph.conf gerado pelo mon
+    networks:
+      - ceph-net
+
+networks:
+  ceph-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  ceph-conf:
