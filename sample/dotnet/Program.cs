@@ -1,75 +1,44 @@
 ﻿using System;
-using System.IO;
-using Amazon;
-using Amazon.S3;
-using Amazon.S3.Model;
+using System.Net.Http;
+using System.Threading.Tasks;
 
-class MinioFileManager
+class Program
 {
-    private static readonly string minioUrl = "http://localhost:9000";
-    private static readonly string accessKey = "minioadmin";
-    private static readonly string secretKey = "minioadmin";
-    private static readonly string bucketName = "upload";
-
-    private static readonly AmazonS3Client s3Client = new AmazonS3Client(
-        accessKey, secretKey, new AmazonS3Config
-        {
-            ServiceURL = minioUrl,
-            ForcePathStyle = true, 
-            SignatureVersion = "v4"
-        }
-    );
-
-    public static async Task UploadFile(string filePath, string objectName)
+    static async Task Main(string[] args)
     {
-        try
-        {
-            var putRequest = new PutObjectRequest
-            {
-                BucketName = bucketName,
-                Key = objectName,
-                FilePath = filePath
-            };
-            await s3Client.PutObjectAsync(putRequest);
-            Console.WriteLine($"Arquivo '{objectName}' carregado com sucesso no bucket '{bucketName}'.");
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine($"Erro ao fazer upload: {e.Message}");
-        }
-    }
+        string authUrl = "http://localhost:8080/auth/v1.0";
+        string username = "test:tester";
+        string password = "testing";
+        string containerName = "mycontainer";
 
-    public static async Task DownloadFile(string objectName, string downloadPath)
-    {
-        try
+        // Autenticação no Swift
+        var httpClient = new HttpClient();
+        httpClient.DefaultRequestHeaders.Add("X-Auth-User", username);
+        httpClient.DefaultRequestHeaders.Add("X-Auth-Key", password);
+        var authResponse = await httpClient.GetAsync(authUrl);
+        authResponse.EnsureSuccessStatusCode();
+
+        // Obtenção do token e URL de armazenamento
+        string authToken = authResponse.Headers.GetValues("X-Auth-Token").FirstOrDefault();
+        string storageUrl = authResponse.Headers.GetValues("X-Storage-Url").FirstOrDefault();
+
+        // Verificação do container
+        var request = new HttpRequestMessage(HttpMethod.Head, $"{storageUrl}/{containerName}");
+        request.Headers.Add("X-Auth-Token", authToken);
+        
+        var response = await httpClient.SendAsync(request);
+        if (response.IsSuccessStatusCode)
         {
-            var getRequest = new GetObjectRequest
-            {
-                BucketName = bucketName,
-                Key = objectName
-            };
-
-            using (GetObjectResponse response = await s3Client.GetObjectAsync(getRequest))
-            using (Stream responseStream = response.ResponseStream)
-            using (var fileStream = File.Create(downloadPath))
-            {
-                responseStream.CopyTo(fileStream);
-            }
-            Console.WriteLine($"Arquivo '{objectName}' baixado com sucesso para '{downloadPath}'.");
+            Console.WriteLine($"O container '{containerName}' já existe.");
         }
-        catch (Exception e)
+        else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
-            Console.WriteLine($"Erro ao fazer download: {e.Message}");
+            Console.WriteLine($"O container '{containerName}' não existe. Criando...");
+            // Código para criar o container
         }
-    }
-
-    public static void Main(string[] args)
-    {
-        string localFilePath = "/home/guilherme/source/pocs/file-upload/sample/dotnet/local_upload.txt";
-        string downloadPath = "/home/guilherme/source/pocs/file-upload/sample/dotnet/local_download.txt";
-        string objectName = "local_upload.txt";
-
-        UploadFile(localFilePath, objectName).Wait();
-        DownloadFile(objectName, downloadPath).Wait();
+        else
+        {
+            Console.WriteLine("Erro ao verificar a existência do container.");
+        }
     }
 }

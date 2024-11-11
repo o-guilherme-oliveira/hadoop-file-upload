@@ -1,7 +1,7 @@
 from swiftclient import client
 from swiftclient.exceptions import ClientException
 
-auth_url = "http://localhost:8080/auth/v1.0"
+auth_url = "http://localhost:8089/auth/v1.0"
 username = "test:tester"
 password = "testing"
 container_name = "mycontainer"
