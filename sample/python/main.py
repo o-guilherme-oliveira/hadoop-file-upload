@@ -1,33 +1,31 @@
-import boto3
-from botocore.client import Config
+from swiftclient import client
+from swiftclient.exceptions import ClientException
 
+auth_url = "http://localhost:8080/auth/v1.0"
+username = "test:tester"
+password = "testing"
+container_name = "mycontainer"
+object_name = "local_upload.txt"
+file_path = object_name
 
-minio_url = "http://localhost:9000"
-access_key = "minioadmin"
-secret_key = "minioadmin"
-bucket_name = "upload"
+print(f"Autenticando...")
+swift = client.Connection(authurl=auth_url, user=username, key=password, auth_version="1")
 
+try:
+    swift.head_container(container_name)
+    print(f"O container '{container_name}' já existe.")
+except ClientException as e:
+    if e.http_status == 404:
+        print(f"O container '{container_name}' não existe. Criando...")
+        swift.put_container(container_name)
+    else:
+        raise e
 
-s3_client = boto3.client(
-    's3',
-    endpoint_url=minio_url,
-    aws_access_key_id=access_key,
-    aws_secret_access_key=secret_key,
-    config=Config(signature_version='s3v4')
-)
+with open(file_path, 'rb') as file_data:
+    swift.put_object(container_name, object_name, contents=file_data, content_type='text/plain')
+    print("Arquivo armazenado com sucesso!")
 
-
-def upload_file(file_path, object_name):
-    s3_client.upload_file(file_path, bucket_name, object_name)
-    print(
-        f"Arquivo '{object_name}' carregado com sucesso no bucket '{bucket_name}'.")
-
-
-def download_file(object_name, download_path):
-    s3_client.download_file(bucket_name, object_name, download_path)
-    print(
-        f"Arquivo '{object_name}' baixado com sucesso para '{download_path}'.")
-
-
-upload_file("local_upload.txt", "uploaded_file.txt")
-download_file("uploaded_file.txt", "local_download.txt")
+obj_tuple = swift.get_object(container_name, object_name)
+with open("downloaded_example.txt", "wb") as downloaded_file:
+    downloaded_file.write(obj_tuple[1])
+    print("Arquivo recuperado com sucesso!")

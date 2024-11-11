@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  swift:
+    image: openstackswift/saio
+    container_name: swift_container
+    environment:
+      - SWIFT_USERNAME=test:tester  # Defina o usuário
+      - SWIFT_PASSWORD=testing      # Defina a senha
+      - SWIFT_TENANT_NAME=test
+      - SWIFT_DOMAIN_NAME=default
+      - SWIFT_AUTH_URL=http://localhost:8080/auth/v1.0
+    ports:
+      - "8080:8080"  # Porta para acessar o Swift
+    restart: always  # Política de restart para o container
+    volumes:
+      - swift_data:/srv  # Volume para persistência dos dados
+    networks:
+      - swift_network
+
+volumes:
+  swift_data:
+
+networks:
+  swift_network:
